@@ -105,7 +105,7 @@ const SCRIPT = [
   { speaker: "EI", text: `Nooope.` }
 ];
 
-const DELAY = 5000;
+const DELAY = 2000;
 
 const subscribeToMessages = cb => {
   SCRIPT.slice(0)

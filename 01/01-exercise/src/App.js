@@ -4,8 +4,44 @@ import subscribeToMessages from "./messages";
 import FadeIn from "./FadeIn";
 
 class PinScrollToBottom extends Component {
+  scroll() {
+    if (!this.scrolledUp) {
+      document.documentElement.scrollTop =
+        document.documentElement.scrollHeight;
+    }
+  }
+
+  // // Deprecated in 16.3
+  // componentWillUpdate() {
+  //   // Perform a DOM measurement before the update
+  //   const { clientHeight, scrollTop, scrollHeight } = document.documentElement;
+  //   this.scrolledUp = clientHeight + scrollTop < scrollHeight;
+  // }
+
+  componentDidUpdate(prevProps, prevState, scrolledUp) {
+    if (!this.scrolledUp) {
+      this.scroll();
+    }
+  }
+
+  getSnapshotBeforeUpdate(props) {
+    const { clientHeight, scrollTop, scrollHeight } = document.documentElement;
+    return clientHeight + scrollTop < scrollHeight;
+  }
+
+  componentDidUpdate() {
+    this.scroll();
+  }
+
+  componentDidMount() {
+    this.scroll();
+  }
+
   render() {
     return this.props.children;
+    return React.Children.map(this.props.children, child => {
+      return child;
+    });
   }
 }
 
