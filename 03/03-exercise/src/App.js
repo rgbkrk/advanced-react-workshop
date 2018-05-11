@@ -220,12 +220,12 @@ class Progress extends React.Component {
             <div
               className="progress"
               onClick={ev => {
-                const leftPositionOfClick = ev.clientX; // left position *from window* of mouse click
-                const rect = ev.currentTarget.getBoundingClientRect();
+                const {
+                  left,
+                  width
+                } = ev.currentTarget.getBoundingClientRect();
 
-                const { left, width } = rect;
-
-                const percent = (leftPositionOfClick - left) / width;
+                const percent = (ev.clientX - left) / width;
 
                 const newTime = percent * duration;
 
