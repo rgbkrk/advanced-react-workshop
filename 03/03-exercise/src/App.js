@@ -44,8 +44,7 @@ Good luck!
 */
 
 import "./index.css";
-import React from "react";
-import * as PropTypes from "prop-types";
+import * as React from "react";
 import podcast from "./podcast.mp4";
 import mario from "./mariobros.mp3";
 import FaPause from "react-icons/lib/fa/pause";
@@ -53,18 +52,74 @@ import FaPlay from "react-icons/lib/fa/play";
 import FaRepeat from "react-icons/lib/fa/repeat";
 import FaRotateLeft from "react-icons/lib/fa/rotate-left";
 
+const AudioContext = React.createContext();
+
 class AudioPlayer extends React.Component {
+  constructor(props) {
+    super(props);
+    this.ref = React.createRef();
+
+    this.play = () => {
+      this.ref.current.play();
+      this.setState({
+        isPlaying: true
+      });
+    };
+    this.pause = () => {
+      this.ref.current.pause();
+      this.setState({
+        isPlaying: false
+      });
+    };
+
+    this.setCurrentTime = currentTime => {
+      // Will this trigger
+      this.ref.current.currentTime = currentTime;
+      this.setState({
+        currentTime
+      });
+    };
+
+    this.onEnded = ev => this.setState({ isPlaying: false });
+
+    this.onTimeUpdate = ev => {
+      this.setState({
+        currentTime: ev.currentTarget.currentTime
+      });
+    };
+
+    this.onLoadedData = ev => {
+      this.setState({
+        duration: ev.currentTarget.duration
+      });
+    };
+
+    this.state = {
+      play: this.play,
+      pause: this.pause,
+      isPlaying: false,
+      setCurrentTime: this.setCurrentTime
+    };
+  }
+
+  componentDidMount() {
+    // playbackRate is imperative
+    // this.ref.current.playbackRate = 1.1;
+  }
+
   render() {
     return (
       <div className="audio-player">
         <audio
-          src={null}
-          onTimeUpdate={null}
-          onLoadedData={null}
-          onEnded={null}
-          ref={n => (this.audio = n)}
+          src={this.props.source}
+          onTimeUpdate={this.onTimeUpdate}
+          onLoadedData={this.onLoadedData}
+          onEnded={this.onEnded}
+          ref={this.ref}
         />
-        {this.props.children}
+        <AudioContext.Provider value={this.state}>
+          {this.props.children}
+        </AudioContext.Provider>
       </div>
     );
   }
@@ -73,14 +128,18 @@ class AudioPlayer extends React.Component {
 class Play extends React.Component {
   render() {
     return (
-      <button
-        className="icon-button"
-        onClick={null}
-        disabled={null}
-        title="play"
-      >
-        <FaPlay />
-      </button>
+      <AudioContext.Consumer>
+        {context => (
+          <button
+            className="icon-button"
+            onClick={context.play}
+            disabled={context.isPlaying}
+            title="play"
+          >
+            <FaPlay />
+          </button>
+        )}
+      </AudioContext.Consumer>
     );
   }
 }
@@ -88,21 +147,29 @@ class Play extends React.Component {
 class Pause extends React.Component {
   render() {
     return (
-      <button
-        className="icon-button"
-        onClick={null}
-        disabled={null}
-        title="pause"
-      >
-        <FaPause />
-      </button>
+      <AudioContext.Consumer>
+        {context => (
+          <button
+            className="icon-button"
+            onClick={context.pause}
+            disabled={!context.isPlaying}
+            title="pause"
+          >
+            <FaPause />
+          </button>
+        )}
+      </AudioContext.Consumer>
     );
   }
 }
 
 class PlayPause extends React.Component {
   render() {
-    return null;
+    return (
+      <AudioContext.Consumer>
+        {({ isPlaying }) => (isPlaying ? <Pause /> : <Play />)}
+      </AudioContext.Consumer>
+    );
   }
 }
 
@@ -139,14 +206,45 @@ class JumpBack extends React.Component {
 class Progress extends React.Component {
   render() {
     return (
-      <div className="progress" onClick={null}>
-        <div
-          className="progress-bar"
-          style={{
-            width: "23%"
-          }}
-        />
-      </div>
+      <AudioContext.Consumer>
+        {context => {
+          const { duration, currentTime } = context;
+
+          let width;
+
+          if (duration && currentTime && duration !== 0) {
+            width = `${Math.round(currentTime / duration * 100)}%`;
+          }
+
+          return (
+            <div
+              className="progress"
+              onClick={ev => {
+                const leftPositionOfClick = ev.clientX; // left position *from window* of mouse click
+                const rect = ev.currentTarget.getBoundingClientRect();
+
+                const { left, width } = rect;
+
+                const percent = (leftPositionOfClick - left) / width;
+
+                const newTime = percent * duration;
+
+                context.setCurrentTime(newTime);
+              }}
+              style={{
+                boxSizing: "border-box"
+              }}
+            >
+              <div
+                className="progress-bar"
+                style={{
+                  width: width ? width : 0
+                }}
+              />
+            </div>
+          );
+        }}
+      </AudioContext.Consumer>
     );
   }
 }
